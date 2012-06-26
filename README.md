@@ -1,6 +1,6 @@
 README
 ================================
-sfSAMLPlugin is a symfony plugin that allow you to interface SAML with sfDoctrineGuardPlugin.
+sfSAMLPlugin is a symfony plugin that allow you to interface SAML with sfDoctrineGuardPlugin or with sfGuardPlugin (that works with Propel).
 
 sfSAMLPlugin uses simpleSAMLPhp ( http://simplesamlphp.org/ ) for dealing with the Identity Provider (IdP).
 With sfSAMLPlugin, you symfony application is a Service Provider (SP).

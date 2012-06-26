@@ -4,6 +4,7 @@
  * This file is part of the sfSAMLplugin package.
  * (c) 2004-2006 Fabien Potencier <fabien.potencier@symfony-project.com>
  * (c) 2010      Théophile Helleboid <t.helleboid@iariss.fr>
+ * (c) 2012      Loris Tissino <loris.tissino@gmail.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -16,6 +17,7 @@
  * @subpackage sfSAMLAuth
  * @author     Fabien Potencier <fabien.potencier@symfony-project.com>
  * @author     Théophile Helleboid <t.helleboid@iariss.fr>
+ * @author     Loris Tissino <loris.tissino@gmail.com>
  */
 class BasesfSAMLAuthActions extends sfActions
 {
@@ -27,9 +29,8 @@ class BasesfSAMLAuthActions extends sfActions
       return $this->redirect('@homepage');
     }
 
-
     // Create SimpleSAML module
-    $simpleSAMLAuth = new SimpleSAML_Auth_Simple('default-sp');
+    $simpleSAMLAuth = new SimpleSAML_Auth_Simple('example-userpass');
     
     // If the user is authenticated from the IdP
     if ($simpleSAMLAuth->isAuthenticated())
@@ -39,6 +40,7 @@ class BasesfSAMLAuthActions extends sfActions
       // save the referer
       $user_referer = $user->getReferer($request->getReferer());
 
+      /*
       // Try to find the user with his uid
       $query = Doctrine_Core::getTable('sfGuardUser')->createQuery('u')
         ->where('u.username = ?', $attributes['uid'][0]);
@@ -58,7 +60,23 @@ class BasesfSAMLAuthActions extends sfActions
         $guard_user->setIsActive(true);
         $guard_user->save();
       }
-
+      */
+      
+      // For Propel
+      
+      $guard_user=sfGuardUserPeer::retrieveByUsername($attributes['uid'][0]);
+      
+      if(!$guard_user)
+      {
+        // the user doesn't exist, we create a new one with random password
+        $guard_user = new sfGuardUser();
+        $guard_user->setUsername($attributes['uid'][0]);
+        $guard_user->setPassword(md5(microtime().$attributes['uid'][0]. mt_rand ()));
+        $guard_user->setEmailAddress($attributes['mail'][0]);
+        $guard_user->setIsActive(true);
+        $guard_user->save();
+      }
+      
       // Let the User signin
       // The auth is not rembered : the IdP can decide that
       $this->getUser()->signin($guard_user, $remember = false);
@@ -85,7 +103,7 @@ class BasesfSAMLAuthActions extends sfActions
       $user->setReferer($this->getContext()->getActionStack()->getSize() > 1 ? $request->getUri() : $request->getReferer());
 
       $this->url_idp = $simpleSAMLAuth->login(array(
-        'saml:idp' => 'https://openidp.feide.no',
+        'saml:idp' => 'http://127.0.0.1',
       ));
 
       // Nothing happened after there, $simpleSAMLAuth->login() calls exit()
@@ -108,7 +126,7 @@ class BasesfSAMLAuthActions extends sfActions
 
     $signoutUrl = sfConfig::get('app_sf_guard_plugin_success_signout_url');
 
-    $simpleSAMLAuth = new SimpleSAML_Auth_Simple('default-sp');
+    $simpleSAMLAuth = new SimpleSAML_Auth_Simple('example-userpass');
     $simpleSAMLAuth->logout($this->generateUrl('' != $signoutUrl ? $signoutUrl : 'homepage'), array(), true);
     // Nothing happen after there
     
